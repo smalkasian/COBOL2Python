@@ -1,56 +1,79 @@
-import re
+# This will build the COBOL to Python conversion tool
+# Tkinter library is used for the GUI
+# COBOL-IT compiler for the conversion
+# PyGithub library for accessing GitHub repositories
 
-# Patterns for matching COBOL statements and constructs
-perform_pattern = re.compile(r"^\s*PERFORM\s+(\w+)(\s+THROUGH\s+(\w+))?(\s+VARYING\s+(\w+)\s+FROM\s+(\w+)\s+BY\s+(\w+))?")
-add_pattern = re.compile(r"^\s*ADD\s+(\w+)\s+TO\s+(\w+)\s+GIVING\s+(\w+)")
-subtract_pattern = re.compile(r"^\s*SUBTRACT\s+(\w+)\s+FROM\s+(\w+)\s+GIVING\s+(\w+)")
-move_pattern = re.compile(r"^\s*MOVE\s+(\w+)\s+TO\s+(\w+)")
-if_pattern = re.compile(r"^\s*IF\s+(\w+)\s+(\w+)\s+(\w+)")
 
-# Dictionary of COBOL to Python keyword translations
-keyword_map = {
-    "PERFORM": "for",
-    "THROUGH": "to",
-    "VARYING": "in",
-    "ADD": "+=",
-    "SUBTRACT": "-=",
-    "MOVE": "=",
-    "IF": "if",
-}
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import subprocess
+from github import Github
 
-def cobol_to_python(cobol_code):
-    # Split the COBOL code into lines
-    lines = cobol_code.split("\n")
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.create_widgets()
 
-    # Initialize an empty list to store the Python code
-    python_code = []
+    def create_widgets(self):
+        # Create file selection button
+        self.file_button = tk.Button(self.root, text='Select COBOL file', command=self.select_file)
+        self.file_button.pack()
 
-    # Iterate over the lines of COBOL code
-    for line in lines:
-        # Try to match each COBOL statement or construct with a regex pattern
-        perform_match = perform_pattern.match(line)
-        add_match = add_pattern.match(line)
-        subtract_match = subtract_pattern.match(line)
-        move_match = move_pattern.match(line)
-        if_match = if_pattern.match(line)
+        # Create GitHub repository URL entry field
+        self.repo_entry = tk.ttk.Entry(self.root)
+        self.repo_entry.pack()
 
-        # If a match is found, generate the equivalent Python code and append it to the list
-        if perform_match:
-            # Extract the matched groups from the regex match
-            (_, loop_var, _, _, iter_var, start, step) = perform_match.groups()
+        # Create convert button
+        self.convert_button = tk.Button(self.root, text='Convert', command=self.convert)
+        self.convert_button.pack()
 
-            # Translate the COBOL keywords to Python
-            loop_var = keyword_map[loop_var]
-            if iter_var:
-                iter_var = keyword_map[iter_var]
-            if start:
-                start = keyword_map[start]
-            if step:
-                step = keyword_map[step]
+    def select_file(self):
+        # Prompt the user to select a COBOL file
+        self.cobol_file = filedialog.askopenfilename(filetypes=[('COBOL files', '*.cbl')])
 
-            # Generate the Python for loop statement
-            python_code.append(f"for {loop_var} {iter_var} range({start}, {step}):")
+    def convert(self):
+        # Check if a COBOL file was selected
+        if not hasattr(self, 'cobol_file'):
+            messagebox.showerror('Error', 'No COBOL file selected')
+            return
 
-        elif add_match:
-            # Extract the matched groups from the regex match
-            (_, operand1, operand2, result) = add_match.groups()
+        # Use the COBOL-IT compiler to convert the COBOL file to Python
+        python_code = subprocess.run(['cobc', '-x', self.cobol_file], capture_output=True).stdout.decode()
+
+        # Write the Python code to a file
+        with open('converted.py', 'w') as f:
+            f.write(python_code)
+
+        messagebox.showinfo('Success', 'COBOL file successfully converted to Python')
+
+def main():
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()
+
+if __name__ == '__main__':
+    main()
+
+
+#This code creates a simple GUI with a button to select a COBOL file, 
+# an entry field to enter a GitHub repository URL, 
+# and a button to initiate the conversion. When the user clicks the "Convert"
+# button, the code uses the COBOL-IT compiler to convert the selected COBOL 
+# file to Python and writes the resulting Python code to a file called 
+# "converted.py".
+
+
+#To integrate the GitHub API, ADD THIS BLOCK BELOW TO THE 'CONVERT' METHOD
+
+# Get the repository URL from the entry field
+repo_url = self.repo_entry.get()
+
+# Extract the repository name and owner from the URL
+repo_parts = repo_url.split('/')
+repo_name = repo_parts[-1]
+owner = repo_parts[-2]
+
+# Initialize the PyGithub client with an access token
+client = Github('YOUR_ACCESS_TOKEN_HERE')
+
+# Get the repository using the Py
