@@ -1,0 +1,56 @@
+import re
+
+# Patterns for matching COBOL statements and constructs
+perform_pattern = re.compile(r"^\s*PERFORM\s+(\w+)(\s+THROUGH\s+(\w+))?(\s+VARYING\s+(\w+)\s+FROM\s+(\w+)\s+BY\s+(\w+))?")
+add_pattern = re.compile(r"^\s*ADD\s+(\w+)\s+TO\s+(\w+)\s+GIVING\s+(\w+)")
+subtract_pattern = re.compile(r"^\s*SUBTRACT\s+(\w+)\s+FROM\s+(\w+)\s+GIVING\s+(\w+)")
+move_pattern = re.compile(r"^\s*MOVE\s+(\w+)\s+TO\s+(\w+)")
+if_pattern = re.compile(r"^\s*IF\s+(\w+)\s+(\w+)\s+(\w+)")
+
+# Dictionary of COBOL to Python keyword translations
+keyword_map = {
+    "PERFORM": "for",
+    "THROUGH": "to",
+    "VARYING": "in",
+    "ADD": "+=",
+    "SUBTRACT": "-=",
+    "MOVE": "=",
+    "IF": "if",
+}
+
+def cobol_to_python(cobol_code):
+    # Split the COBOL code into lines
+    lines = cobol_code.split("\n")
+
+    # Initialize an empty list to store the Python code
+    python_code = []
+
+    # Iterate over the lines of COBOL code
+    for line in lines:
+        # Try to match each COBOL statement or construct with a regex pattern
+        perform_match = perform_pattern.match(line)
+        add_match = add_pattern.match(line)
+        subtract_match = subtract_pattern.match(line)
+        move_match = move_pattern.match(line)
+        if_match = if_pattern.match(line)
+
+        # If a match is found, generate the equivalent Python code and append it to the list
+        if perform_match:
+            # Extract the matched groups from the regex match
+            (_, loop_var, _, _, iter_var, start, step) = perform_match.groups()
+
+            # Translate the COBOL keywords to Python
+            loop_var = keyword_map[loop_var]
+            if iter_var:
+                iter_var = keyword_map[iter_var]
+            if start:
+                start = keyword_map[start]
+            if step:
+                step = keyword_map[step]
+
+            # Generate the Python for loop statement
+            python_code.append(f"for {loop_var} {iter_var} range({start}, {step}):")
+
+        elif add_match:
+            # Extract the matched groups from the regex match
+            (_, operand1, operand2, result) = add_match.groups()
